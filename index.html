@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart ATS Resume Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1><i class="fas fa-file-alt"></i> Smart ATS Builder</h1>
+    <p class="subtitle">Create job-tailored resumes & CVs in minutes — no tech skills needed</p>
+  </header>
+
+  <!-- Progress Steps -->
+  <div class="steps">
+    <div class="step active" data-step="1"><span>1</span> Your Details</div>
+    <div class="step" data-step="2"><span>2</span> Job Description</div>
+    <div class="step" data-step="3"><span>3</span> Preview & Download</div>
+  </div>
+
+  <main class="container">
+    
+    <!-- STEP 1: Personal & Professional Details -->
+    <section id="step1" class="step-content active">
+      <h2><i class="fas fa-user"></i> Tell Us About Yourself</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="fullName" placeholder="Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Target Job Title *</label>
+          <input type="text" id="jobTitle" placeholder="Marketing Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="email" placeholder="jane@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+        </div>
+        <div class="form-group full">
+          <label>Location</label>
+          <input type="text" id="location" placeholder="New York, NY">
+        </div>
+        <div class="form-group full">
+          <label>LinkedIn / Portfolio</label>
+          <input type="url" id="linkedin" placeholder="linkedin.com/in/janesmith">
+        </div>
+      </div>
+
+      <h3><i class="fas fa-briefcase"></i> Professional Summary</h3>
+      <textarea id="summary" rows="4" placeholder="Write 3-4 sentences about your experience, strengths, and career goals..."></textarea>
+
+      <h3><i class="fas fa-lightbulb"></i> Skills (Add your top skills)</h3>
+      <div class="skills-input">
+        <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
+        <div id="skillsList" class="skills-tags"></div>
+        <input type="hidden" id="skillsData">
+      </div>
+
+      <h3><i class="fas fa-history"></i> Work Experience</h3>
+      <div id="experienceList"></div>
+      <button type="button" class="btn-secondary" onclick="addExperienceField()">+ Add Another Job</button>
+
+      <h3><i class="fas fa-graduation-cap"></i> Education</h3>
+      <div id="educationList"></div>
+      <button type="button" class="btn-secondary" onclick="addEducationField()">+ Add Another Degree</button>
+
+      <div class="step-nav">
+        <button class="btn-next" onclick="nextStep(2)">Next: Add Job Description →</button>
+      </div>
+    </section>
+
+    <!-- STEP 2: Job Description Analyzer -->
+    <section id="step2" class="step-content">
+      <h2><i class="fas fa-search"></i> Paste the Job Description</h2>
+      <p class="hint">Copy the full job posting. We'll extract keywords and tailor your resume automatically.</p>
+      
+      <textarea id="jobDescription" rows="12" placeholder="Paste the job description here..."></textarea>
+      
+      <div class="analysis-result" id="analysisResult" style="display:none">
+        <h3>✨ Keywords Found</h3>
+        <div id="keywordTags" class="skills-tags"></div>
+        <p><strong>ATS Match Score:</strong> <span id="matchScore">--</span>%</p>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-prev" onclick="nextStep(1)">← Back</button>
+        <button class="btn-next" onclick="analyzeAndGenerate()">Generate My Documents →</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: Preview & Download -->
+    <section id="step3" class="step-content">
+      <h2><i class="fas fa-eye"></i> Preview & Download</h2>
+      
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="resume">📄 ATS Resume (1-2 Pages)</button>
+        <button class="tab-btn" data-tab="cv">📘 ATS CV (Detailed)</button>
+      </div>
+
+      <div class="preview-container">
+        <!-- Resume Preview -->
+        <div id="resumePreview" class="preview-panel active">
+          <div class="a4-page" id="resumeDocument">
+            <!-- Dynamically generated -->
+          </div>
+        </div>
+        
+        <!-- CV Preview -->
+        <div id="cvPreview" class="preview-panel">
+          <div class="a4-page" id="cvDocument">
+            <!-- Dynamically generated -->
+          </div>
+        </div>
+      </div>
+
+      <div class="download-actions">
+        <button class="btn-download" onclick="downloadPDF('resume')">
+          <i class="fas fa-download"></i> Download Resume PDF
+        </button>
+        <button class="btn-download" onclick="downloadPDF('cv')">
+          <i class="fas fa-download"></i> Download CV PDF
+        </button>
+        <button class="btn-secondary" onclick="window.print()">
+          <i class="fas fa-print"></i> Print / Save as PDF
+        </button>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-prev" onclick="nextStep(2)">← Edit Job Description</button>
+        <button class="btn-secondary" onclick="location.reload()">Start Over</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Hidden Templates for Generation -->
+  <template id="experienceTemplate">
+    <div class="experience-item">
+      <input type="text" class="job-title" placeholder="Job Title">
+      <input type="text" class="company" placeholder="Company Name">
+      <input type="text" class="job-date" placeholder="Dates (e.g., Jan 2020 - Present)">
+      <textarea class="job-details" rows="3" placeholder="Key achievements & responsibilities..."></textarea>
+      <button type="button" class="btn-remove" onclick="removeField(this)">Remove</button>
+    </div>
+  </template>
+
+  <template id="educationTemplate">
+    <div class="education-item">
+      <input type="text" class="degree" placeholder="Degree (e.g., B.A. Marketing)">
+      <input type="text" class="school" placeholder="School/University">
+      <input type="text" class="edu-date" placeholder="Year (e.g., 2019)">
+      <button type="button" class="btn-remove" onclick="removeField(this)">Remove</button>
+    </div>
+  </template>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
