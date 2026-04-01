@@ -3,14 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart ATS Resume Builder</title>
+  <title>Smart ATS Resume & CV Builder</title>
+  <meta name="description" content="Create ATS-optimized resumes and CVs. Upload your existing file or start from scratch.">
+  
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Parsing Libraries (CDN) -->
+  <!-- PDF.js for reading PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // Set worker source for PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <!-- Mammoth.js for reading DOCX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body>
+
+  <!-- Header -->
   <header class="app-header">
-    <h1><i class="fas fa-file-alt"></i> Smart ATS Builder</h1>
-    <p class="subtitle">Create job-tailored resumes & CVs in minutes — no tech skills needed</p>
+    <h1><i class="fas fa-robot"></i> Smart ATS Builder</h1>
+    <p class="subtitle">Upload your resume or start fresh. Get job-tailored PDFs in minutes.</p>
   </header>
 
   <!-- Progress Steps -->
@@ -22,58 +39,95 @@
 
   <main class="container">
     
-    <!-- STEP 1: Personal & Professional Details -->
+    <!-- STEP 1: Upload OR Fill Form -->
     <section id="step1" class="step-content active">
-      <h2><i class="fas fa-user"></i> Tell Us About Yourself</h2>
       
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Full Name *</label>
-          <input type="text" id="fullName" placeholder="Jane Smith" required>
+      <!-- Upload Section -->
+      <div class="upload-section" id="uploadSection">
+        <h2><i class="fas fa-cloud-upload-alt"></i> Upload Your Existing Resume</h2>
+        <p class="hint">Supports PDF, DOCX, or TXT. We'll extract your info automatically!</p>
+        
+        <div class="upload-zone" id="dropZone">
+          <i class="fas fa-file-upload fa-3x"></i>
+          <p><strong>Drag & drop</strong> your file here</p>
+          <p class="small">or</p>
+          <label class="btn-secondary" for="fileInput">Browse Files</label>
+          <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" hidden>
+          <p class="small" id="fileInfo"></p>
         </div>
-        <div class="form-group">
-          <label>Target Job Title *</label>
-          <input type="text" id="jobTitle" placeholder="Marketing Manager" required>
+        
+        <!-- Upload Result Preview -->
+        <div class="upload-result" id="uploadResult" style="display:none">
+          <div class="success-badge"><i class="fas fa-check"></i> File Parsed!</div>
+          <p>We extracted the following information. <strong>Review and edit below:</strong></p>
+          <div id="extractedPreview" class="extracted-preview"></div>
+          <div class="action-buttons">
+            <button class="btn-next" onclick="confirmUpload()">✅ Use This Data</button>
+            <button class="btn-text" onclick="resetUpload()">✏️ Edit Manually Instead</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Email *</label>
-          <input type="email" id="email" placeholder="jane@email.com" required>
+        
+        <div class="divider">
+          <span>— OR —</span>
         </div>
-        <div class="form-group">
-          <label>Phone</label>
-          <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+        
+        <button class="btn-text" onclick="skipUpload()">Fill Form Manually Instead →</button>
+      </div>
+
+      <!-- Manual Form (Hidden initially if upload is used, shown if skipped) -->
+      <div id="manualForm" style="display:none">
+        <h2><i class="fas fa-user"></i> Tell Us About Yourself</h2>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="fullName" placeholder="Jane Smith" required>
+          </div>
+          <div class="form-group">
+            <label>Target Job Title *</label>
+            <input type="text" id="jobTitle" placeholder="Marketing Manager" required>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="email" placeholder="jane@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+          </div>
+          <div class="form-group full">
+            <label>Location</label>
+            <input type="text" id="location" placeholder="New York, NY">
+          </div>
+          <div class="form-group full">
+            <label>LinkedIn / Portfolio</label>
+            <input type="url" id="linkedin" placeholder="linkedin.com/in/janesmith">
+          </div>
         </div>
-        <div class="form-group full">
-          <label>Location</label>
-          <input type="text" id="location" placeholder="New York, NY">
+
+        <h3><i class="fas fa-briefcase"></i> Professional Summary</h3>
+        <textarea id="summary" rows="4" placeholder="Write 3-4 sentences about your experience, strengths, and career goals..."></textarea>
+
+        <h3><i class="fas fa-lightbulb"></i> Skills (Add your top skills)</h3>
+        <div class="skills-input">
+          <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
+          <div id="skillsList" class="skills-tags"></div>
+          <input type="hidden" id="skillsData">
         </div>
-        <div class="form-group full">
-          <label>LinkedIn / Portfolio</label>
-          <input type="url" id="linkedin" placeholder="linkedin.com/in/janesmith">
+
+        <h3><i class="fas fa-history"></i> Work Experience</h3>
+        <div id="experienceList"></div>
+        <button type="button" class="btn-secondary" onclick="addExperienceField()">+ Add Another Job</button>
+
+        <h3><i class="fas fa-graduation-cap"></i> Education</h3>
+        <div id="educationList"></div>
+        <button type="button" class="btn-secondary" onclick="addEducationField()">+ Add Another Degree</button>
+
+        <div class="step-nav">
+          <button class="btn-next" onclick="nextStep(2)">Next: Add Job Description →</button>
         </div>
       </div>
 
-      <h3><i class="fas fa-briefcase"></i> Professional Summary</h3>
-      <textarea id="summary" rows="4" placeholder="Write 3-4 sentences about your experience, strengths, and career goals..."></textarea>
-
-      <h3><i class="fas fa-lightbulb"></i> Skills (Add your top skills)</h3>
-      <div class="skills-input">
-        <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
-        <div id="skillsList" class="skills-tags"></div>
-        <input type="hidden" id="skillsData">
-      </div>
-
-      <h3><i class="fas fa-history"></i> Work Experience</h3>
-      <div id="experienceList"></div>
-      <button type="button" class="btn-secondary" onclick="addExperienceField()">+ Add Another Job</button>
-
-      <h3><i class="fas fa-graduation-cap"></i> Education</h3>
-      <div id="educationList"></div>
-      <button type="button" class="btn-secondary" onclick="addEducationField()">+ Add Another Degree</button>
-
-      <div class="step-nav">
-        <button class="btn-next" onclick="nextStep(2)">Next: Add Job Description →</button>
-      </div>
     </section>
 
     <!-- STEP 2: Job Description Analyzer -->
@@ -140,7 +194,7 @@
 
   </main>
 
-  <!-- Hidden Templates for Generation -->
+  <!-- Hidden Templates for Dynamic Fields -->
   <template id="experienceTemplate">
     <div class="experience-item">
       <input type="text" class="job-title" placeholder="Job Title">
@@ -160,7 +214,10 @@
     </div>
   </template>
 
+  <!-- PDF Generation Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- App Logic -->
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
